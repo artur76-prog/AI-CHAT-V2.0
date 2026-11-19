@@ -45,65 +45,75 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // --- Интерфейс (программно, без XML) ---
-        val root = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
+        // ЛОВУШКА ДЛЯ ОШИБОК
+        try {
+            val root = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+            }
 
-        scrollView = ScrollView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
-            )
-        }
+            scrollView = ScrollView(this).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f
+                )
+            }
 
-        chatContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(16, 16, 16, 16)
-        }
-        scrollView.addView(chatContainer)
+            chatContainer = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                setPadding(16, 16, 16, 16)
+            }
+            scrollView.addView(chatContainer)
 
-        val bottomPanel = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
+            val bottomPanel = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+            }
 
-        input = EditText(this).apply {
-            hint = "Сообщение..."
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        }
+            input = EditText(this).apply {
+                hint = "Сообщение..."
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
 
-        val sendButton = Button(this).apply {
-            text = "Отправить"
-            setOnClickListener { sendMessage() }
-        }
+            val sendButton = Button(this).apply {
+                text = "Отправить"
+                setOnClickListener { sendMessage() }
+            }
 
-        // Долгое нажатие на кнопку отправки — ввод API-ключа
-        sendButton.setOnLongClickListener {
-            showApiKeyDialog()
-            true
-        }
+            sendButton.setOnLongClickListener {
+                showApiKeyDialog()
+                true
+            }
 
-        bottomPanel.addView(input)
-        bottomPanel.addView(sendButton)
+            bottomPanel.addView(input)
+            bottomPanel.addView(sendButton)
 
-        root.addView(scrollView)
-        root.addView(bottomPanel)
+            root.addView(scrollView)
+            root.addView(bottomPanel)
 
-        setContentView(root)
+            setContentView(root)
 
-        // --- Загрузка ключа ---
-        apiKey = getSharedPreferences("settings", MODE_PRIVATE)
-            .getString("api_key", "") ?: ""
+            apiKey = getSharedPreferences("settings", MODE_PRIVATE)
+                .getString("api_key", "") ?: ""
 
-        // --- Retrofit ---
-        val retrofit = Retrofit.Builder()
-            .baseUrl("https://dashscope-intl.aliyuncs.com/compatible-mode/v1/")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
+            val retrofit = Retrofit.Builder()
+                .baseUrl("https://dashscope-intl.aliyuncs.com/compatible-mode/v1/")
+                .addConverterFactory(GsonConverterFactory.create())
+                .build()
 
-        api = retrofit.create(QwenApi::class.java)
+            api = retrofit.create(QwenApi::class.java)
 
-        if (apiKey.isEmpty()) {
-            addMessage("ИИ: Привет! Зажми кнопку «Отправить» (долгое нажатие), чтобы ввести API-ключ Qwen.")
+            if (apiKey.isEmpty()) {
+                addMessage("ИИ: Привет! Зажми кнопку «Отправить» (долгое нажатие), чтобы ввести API-ключ Qwen.")
+            }
+        } catch (e: Exception) {
+            // Если произошла ошибка, показываем её на экране!
+            val errorText = TextView(this).apply {
+                text = "ОШИБКА ЗАПУСКА:\n\n${e.message}\n\n${e.stackTraceToString()}"
+                setTextColor(android.graphics.Color.RED)
+                textSize = 12f
+                setPadding(16, 16, 16, 16)
+            }
+            val errorScroll = ScrollView(this)
+            errorScroll.addView(errorText)
+            setContentView(errorScroll)
         }
     }
 
